@@ -1,74 +1,125 @@
 const tasks = require("../task.json");
 
-exports.createTask = (req, res) => {
-   const  {title , description, completed} = req.body
-   if (!title || !description || completed === undefined){
-    return res.status(400).send()
-   }
+// Validation Helper
+function validateTaskData({ title, description, completed, priority }) {
+  const allowedPriorities = ["low", "medium", "high"];
 
-   const newTask = {
-    id : parseInt(tasks.tasks.lenghth + 1),
+  if (
+    !title || typeof title !== "string" || title.trim() === "" ||
+    !description || typeof description !== "string" || description.trim() === "" ||
+    typeof completed !== "boolean" ||
+    !priority || !allowedPriorities.includes(priority.toLowerCase())
+  ) {
+    return false;
+  }
+  return true;
+}
+
+// Create Task
+exports.createTask = (req, res) => {
+  const { title, description, completed, priority } = req.body;
+
+  if (!validateTaskData({ title, description, completed, priority })) {
+    return res.status(400).send();
+  }
+
+  const newTask = {
+    id: tasks.tasks.length + 1,
     title,
     description,
-    completed
-   }
+    completed,
+    priority: priority.toLowerCase(),
+    createdAt: new Date().toISOString()
+  };
 
-    tasks.tasks.push(newTask)
+  tasks.tasks.push(newTask);
+  return res.status(201).send(newTask);
+};
 
-    return res.status(201).send()
-}
+// Get All Tasks (with filtering + sorting)
+exports.getAllTask = (req, res) => {
+  let result = tasks.tasks;
 
-exports.getAllTask = (req,res) =>{
-    return res.status(200).send(
-        [...tasks.tasks]
-    )
-}
+  // Filter by completion
+  if (req.query.completed !== undefined) {
+    const isCompleted = req.query.completed === "true";
+    result = result.filter(task => task.completed === isCompleted);
+  }
 
-exports.getTaskById = (req,res) =>{
-    const id = parseInt(req.params.id)
-    const task = tasks.tasks?.find((t) => t.id === id)
-    if (!task){
-        return res.status(404).send()
-    }
-    return res.status(200).send({
-        ...task
-    })
-}
+  // Sort by creation date
+  if (req.query.sort) {
+    const order = req.query.sort.toLowerCase();
+    result = result.sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return order === "asc" ? dateA - dateB : dateB - dateA;
+    });
+  }
 
-exports.updateTask = (req,res) =>{
-    const id = parseInt(req.params.id)
-    const taskIndex = tasks.tasks?.findIndex((t) => t.id === id)
-    if (taskIndex === -1){
-        return res.status(404).send()
-    }
+  return res.status(200).send(result);
+};
 
-    const {title, description, completed} = req.body
-    if ((!title || typeof title !== "string") || (!description || typeof description !== "string") || (typeof completed !== "boolean")){
-        return res.status(400).send()
-    }
+// Get Task By ID
+exports.getTaskById = (req, res) => {
+  const id = parseInt(req.params.id);
+  const task = tasks.tasks?.find((t) => t.id === id);
 
-    tasks.tasks[taskIndex] = {
-        id,
-        title,
-        description,
-        completed
-    }
+  if (!task) {
+    return res.status(404).send();
+  }
 
-    return res.status(200).send()
-}
+  return res.status(200).send(task);
+};
 
-exports.deleteTask = (req,res) =>{
-    const id = parseInt(req.params.id)
-    const taskIndex = tasks.tasks.findIndex((t) => t.id === id)
-    if (taskIndex === -1){
-        return res.status(404).send({
-            message : "task not found"
-        })
-    }
+// Update Task
+exports.updateTask = (req, res) => {
+  const id = parseInt(req.params.id);
+  const taskIndex = tasks.tasks?.findIndex((t) => t.id === id);
 
-    tasks.tasks.splice(taskIndex, 1)
+  if (taskIndex === -1) {
+    return res.status(404).send();
+  }
 
-    return res.status(200).send({
-        message : "task deleted successfully"
-    })
-}
+  const { title, description, completed, priority } = req.body;
+
+  if (!validateTaskData({ title, description, completed, priority })) {
+    return res.status(400).send();
+  }
+
+  tasks.tasks[taskIndex] = {
+    id,
+    title,
+    description,
+    completed,
+    priority: priority.toLowerCase(),
+    createdAt: tasks.tasks[taskIndex].createdAt // keep old date
+  };
+
+  return res.status(200).send(tasks.tasks[taskIndex]);
+};
+
+// Delete Task
+exports.deleteTask = (req, res) => {
+  const id = parseInt(req.params.id);
+  const taskIndex = tasks.tasks.findIndex((t) => t.id === id);
+
+  if (taskIndex === -1) {
+    return res.status(404).send();
+  }
+
+  tasks.tasks.splice(taskIndex, 1);
+  return res.status(200).send();
+};
+
+// Get Tasks by Priority
+exports.getTasksByPriority = (req, res) => {
+  const level = req.params.level.toLowerCase();
+  const allowedPriorities = ["low", "medium", "high"];
+
+  if (!allowedPriorities.includes(level)) {
+    return res.status(400).send({ message: "Invalid priority level" });
+  }
+
+  const result = tasks.tasks.filter(task => task.priority === level);
+  return res.status(200).send(result);
+};
