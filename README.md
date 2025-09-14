@@ -35,4 +35,6 @@ Task Manager API's developed using Node.js and Express, it offers RESTful endpoi
 - `GET /api/tasks/:id` - Retrieve a specific task by ID
 - `PUT /api/tasks/:id` - Update a task by ID
 - `DELETE /api/tasks/:id` - Delete a task by ID
-
+- `GET /api/tasks?status=<status>` - Retrieve tasks filtered by status (e.g., `pending`, `completed`)
+- `GET /api/tasks?sort=<asc | desc>` - Retrieve tasks sorted by creation or due date in ascending or descending order
+- `GET /api/tasks/priority/:level` - Retrieve tasks filtered by priority level (e.g., `high`, `medium`, `low`)
