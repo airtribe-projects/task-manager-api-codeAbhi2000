@@ -8,6 +8,8 @@ tap.test("POST /tasks", async (t) => {
     title: "New Task",
     description: "New Task Description",
     completed: false,
+    priority : "medium",
+    createdAt: new Date().toISOString()
   };
   const response = await server.post("/tasks").send(newTask);
   t.equal(response.status, 201);
@@ -61,6 +63,7 @@ tap.test("PUT /tasks/:id", async (t) => {
     title: "Updated Task",
     description: "Updated Task Description",
     completed: true,
+    priority: "high"
   };
   const response = await server.put("/tasks/1").send(updatedTask);
   t.equal(response.status, 200);
@@ -72,6 +75,7 @@ tap.test("PUT /tasks/:id with invalid id", async (t) => {
     title: "Updated Task",
     description: "Updated Task Description",
     completed: true,
+    priority: "high"
   };
   const response = await server.put("/tasks/999").send(updatedTask);
   t.equal(response.status, 404);
@@ -83,6 +87,7 @@ tap.test("PUT /tasks/:id with invalid data", async (t) => {
     title: "Updated Task",
     description: "Updated Task Description",
     completed: "true",
+    priority: "high"
   };
   const response = await server.put("/tasks/1").send(updatedTask);
   t.equal(response.status, 400);
